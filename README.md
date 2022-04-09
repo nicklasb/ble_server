@@ -1,3 +1,12 @@
+---
+**NOTE**
+
+Together with the BLE client repo, this is a PoC for transferring data using BLE using bigger-than-legal MTU:s* and graciously handling different cases. 
+
+* Currently it is using 2K MTU:s, unclear if the BLE-stack breaks it down into smaller pieces, but it doesn't seem to.
+---
+
+
 | Supported Targets | ESP32 | ESP32-C3 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- |
 
