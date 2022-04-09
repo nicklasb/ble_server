@@ -49,6 +49,7 @@ static uint16_t ble_svc_gatt_read_val_handle,ble_spp_svc_gatt_read_val_handle;
 volatile SemaphoreHandle_t xGuiSemaphore;
 
 void ble_store_config_init(void);
+void ble_client_my_task(void *pvParameters);
 
 /**
  * Logs information about a connection to the console.
@@ -176,6 +177,7 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
             ble_spp_server_print_conn_desc(&desc);
 	    is_connect=true;
 	    connection_handle = event->connect.conn_handle;
+        xTaskCreatePinnedToCore(ble_client_my_task, "myTask", 8192*2, NULL, 8, NULL,0);
         }
         MODLOG_DFLT(INFO, "\n");
         if (event->connect.status != 0) {
@@ -188,6 +190,7 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
         MODLOG_DFLT(INFO, "disconnect; reason=%d ", event->disconnect.reason);
         ble_spp_server_print_conn_desc(&event->disconnect.conn);
         MODLOG_DFLT(INFO, "\n");
+        connection_handle = 9999;
 
         /* Connection terminated; resume advertising. */
         ble_spp_server_advertise();
@@ -341,76 +344,82 @@ int gatt_svr_register(void)
 }
 
 
-void ble_server_uart_task(void *pvParameters){
-     ESP_LOGI(tag,"BLE server UART_task started\n");
-     uart_event_t event;
-     int rc=0;
-     for (;;) {
-         //Waiting for UART event.
-         if (xQueueReceive(spp_common_uart_queue, (void * )&event, (TickType_t)portMAX_DELAY))            {
-	     switch (event.type) {
-             //Event of UART receving data
-             case UART_DATA:
-		if (event.size && (is_connect == true)) {
-			static uint8_t ntf[1];
-                        ntf[0] = 90;
-                        struct os_mbuf *txom;
-                        txom = ble_hs_mbuf_from_flat(ntf, sizeof(ntf));
-			rc = ble_gattc_notify_custom(connection_handle,ble_spp_svc_gatt_read_val_handle,txom);
-			if( rc == 0){
-				ESP_LOGI(tag,"Notification sent successfully");
-			}
-			else {
-				ESP_LOGI(tag,"Error in sending notification");
-			}
-		}
-             	break;
-	     default:
-	     	break;
-	     }
-	  }
-	}
-	  vTaskDelete(NULL);
-}
-static void ble_spp_uart_init(void)
-{
-     uart_config_t uart_config = {
-         .baud_rate = 115200,
-         .data_bits = UART_DATA_8_BITS,
-         .parity = UART_PARITY_DISABLE,
-         .stop_bits = UART_STOP_BITS_1,
-         .flow_ctrl = UART_HW_FLOWCTRL_RTS,
-         .rx_flow_ctrl_thresh = 122,
-         .source_clk = UART_SCLK_APB,
-     };
-     //Install UART driver, and get the queue.
-     uart_driver_install(UART_NUM_0, 4096, 8192, 10,&spp_common_uart_queue,0);
-     //Set UART parameters
-     uart_param_config(UART_NUM_0, &uart_config);
-     //Set UART pins
-     uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-     xTaskCreate(ble_server_uart_task, "uTask", 2048, (void*)UART_NUM_0, 8, NULL);
-}
+
+
 
 void ble_client_my_task(void *pvParameters)
 {
-    char myarray[13] = "thefukinserv\0";
+   // char myarray[13] = "thefukinserv\0";
+   char myarray[2001] = "0abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "1abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "2abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "3abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "4abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "5abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "6abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "7abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "8abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "9abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "0abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "1abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "2abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "3abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "4abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "5abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "6abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "7abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "8abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi"
+   "9abcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgijabcdefhgi\0";
+   
+
     int rc;
 	ESP_LOGI(tag,"My Task: BLE server send task started\n");
+    if (pdTRUE == xSemaphoreTake(xGuiSemaphore, portMAX_DELAY)) {
+        ble_gattc_exchange_mtu(connection_handle, NULL, NULL);
+        ESP_LOGI(tag,"MTU request sent");
+        xSemaphoreGive(xGuiSemaphore);  
+    }else {
+            ESP_LOGI(tag,"My Task: Couldn't get semaphore for MTU exchange");
+    }  
+    vTaskDelay(10);
     for (;;) {
-        vTaskDelay(2000);
-        if (pdTRUE == xSemaphoreTake(xGuiSemaphore, portMAX_DELAY)) {
-            rc = ble_gattc_write_flat(connection_handle, ble_spp_svc_gatt_read_val_handle, &myarray, 13, NULL, NULL);
-            if (rc == 0){
-                ESP_LOGI(tag,"My Task: Write mmmm in uart task success!");
+        
+        int failcount = 0;       
+        int taskdelay = 0;
+        ESP_LOGI(tag,"My Task: Starting sending 1MB data. Taskdelay %i, MBUFs free %i.", taskdelay,os_msys_num_free() );
+        for (int i = 0 ;i < 500; i++)
+        {
+            if (connection_handle == 9999) {
+                ESP_LOGI(tag, "My task: Lost connection, quitting task.");
+                vTaskDelete(NULL);
+                return;
             }
-            else {
-                ESP_LOGI(tag,"My Task: Error in writing characteristic");
+            while (os_msys_num_free() < 9) {
+                //ESP_LOGI(tag,"My Task: Only %i MBUFs free..waiting.", os_msys_num_free());
+                vTaskDelay(1);
             }
-            xSemaphoreGive(xGuiSemaphore);
-        }else {
-                ESP_LOGI(tag,"My Task: Couldn't get semaphore");
+            if (pdTRUE == xSemaphoreTake(xGuiSemaphore, portMAX_DELAY)) {
+                ESP_LOGI(tag,"My Task: Before writing %i Kb characteristic: ", i*2);
+                    
+                rc = ble_gattc_write_flat(connection_handle, ble_spp_svc_gatt_read_val_handle, &myarray, 2001, NULL, NULL);
+                if (rc == 0){
+                    ESP_LOGI(tag,"My Task: Written %i Kb data..", i*2);
+                }
+                else {
+                    ESP_LOGI(tag,"My Task: Error after writing %i Kb characteristic: %i !!!!!", i*2, rc);
+                    failcount ++;
+
+                }
+                xSemaphoreGive(xGuiSemaphore);
+                //vTaskDelay(taskdelay);
+
+            }else {
+                ESP_LOGI(tag,"My Task: Couldn't get semaphore for sending data at %i Kb.", i *2);
+            }  
+
         }
+        ESP_LOGI(tag,"My Task: Done sending 1 MB of data; failcount %i", failcount);
+        vTaskDelay(2000);
         
     }
      vTaskDelete(NULL);
@@ -433,10 +442,11 @@ app_main(void)
     ESP_ERROR_CHECK(esp_nimble_hci_and_controller_init());
     xGuiSemaphore = xSemaphoreCreateMutex();
     nimble_port_init();
+ 
 
     /* Initialize uart driver and start uart task */
  //   ble_spp_uart_init();
-   xTaskCreatePinnedToCore(ble_client_my_task, "myTask", 2048, NULL, 8, NULL,0);
+
 
     /* Initialize the NimBLE host configuration. */
     ble_hs_cfg.reset_cb = ble_spp_server_on_reset;
